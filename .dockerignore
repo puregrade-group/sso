@@ -1,0 +1,10 @@
+.idea
+.gitignore
+.dockerignore
+Dockerfile
+Makefile
+docs
+README.md
+tests
+config/config.yaml
+config/local_tests.yaml

@@ -1,0 +1,14 @@
+env: "local"
+
+app:
+  name: "puregrade-auth-service"
+  version: "0.0.1"
+
+grpc:
+  host: ""
+  port: 50051
+  timeout: 5s
+
+storage_path: "./storage/sso.db"
+
+jwt_token_ttl: 1h
