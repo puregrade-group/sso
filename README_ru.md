@@ -67,11 +67,11 @@
 ##### Примеры:
 
 Логи при запуске приложения:
-<p align="left"><img width="400px" src="execute_log.png" alt="execute_log.png"/></p>
+<p align="left"><img width="400px" src="https://github.com/puregrade-group/sso/raw/master/example/execute_log.png" alt="execute_log.png"/></p>
 
 Из Postman:
-<p align="left"><img width="400px" src="postman_output.png" alt="postman_output.png"/></p>
+<p align="left"><img width="400px" src="https://github.com/puregrade-group/sso/raw/master/example/postman_output.png" alt="postman_output.png"/></p>
 
 Тесты:
-<p align="left"><img width="400px" src="test_output.png" alt="test_output.png"/></p>
+<p align="left"><img width="400px" src="https://github.com/puregrade-group/sso/raw/master/example/test_output.png" alt="test_output.png"/></p>
 
