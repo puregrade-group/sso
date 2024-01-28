@@ -1,0 +1,40 @@
+name: Go gRPC CI/CD
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.5'
+
+      - name: Install dependencies
+        run: go get .
+
+      - name: Build migrator
+        run: CGO_ENABLED=1 go build -o /migrator -v ./cmd/migrator/main.go
+
+      - name: Run migrations
+        run: |
+          /migrator --storage-path=storage/sso.db  --migrations-path=migrations
+          /migrator --storage-path="./storage/sso.db"  --migrations-path="./tests/migrations" --migrations-table="test"
+
+      - name: Build app
+        run: go build -o /app -v ./cmd/main.go
+
+      - name: Run app
+        run: /app --config=./config/config.yaml
+
+      - name: Test
+        run: go test
