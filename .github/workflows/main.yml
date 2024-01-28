@@ -27,7 +27,7 @@ jobs:
 
       - name: Run migrations
         run: |
-          ./migrator --storage-path=storage/sso.db  --migrations-path=migrations
+          ./migrator --storage-path=./storage/sso.db  --migrations-path=./migrations
           ./migrator --storage-path="./storage/sso.db"  --migrations-path="./tests/migrations" --migrations-table="test"
 
       - name: Build app
