@@ -34,4 +34,4 @@ jobs:
         run: CGO_ENABLED=1 go build -o ./app ./cmd/main.go
 
       - name: Test
-        run: go test
+        run: go test ./tests
