@@ -8,7 +8,7 @@ import (
 
 	"github.com/puregrade-group/sso/internal/app"
 	"github.com/puregrade-group/sso/internal/config"
-	"github.com/puregrade-group/sso/internal/utils/slogpretty"
+	"github.com/puregrade-group/sso/pkg/slogpretty"
 )
 
 const (

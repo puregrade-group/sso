@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/puregrade-group/sso/internal/domain/models"
 	"github.com/puregrade-group/sso/internal/storage"
-	"github.com/puregrade-group/sso/internal/utils/jwt"
+	"github.com/puregrade-group/sso/pkg/jwt"
 )
 
 var (
@@ -64,7 +64,7 @@ func (a *ACS) CreatePermission(ctx context.Context,
 
 	log.Info("attempting to create new permission")
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return 0, err
 	}
@@ -140,7 +140,7 @@ func (a *ACS) CheckUserPermission(ctx context.Context,
 		slog.String("op", op),
 	)
 
-	_, err = parseToken(log, op, requesterToken)
+	_, err = parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return false, err
 	}
@@ -171,7 +171,7 @@ func (a *ACS) DeletePermission(ctx context.Context,
 		slog.Int("permId", int(permissionId)),
 	)
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func (a *ACS) AddPermission(ctx context.Context,
 		slog.String("permission", resource+":"+action),
 	)
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return err
 	}
@@ -330,7 +330,7 @@ func (a *ACS) RemovePermission(ctx context.Context,
 		slog.String("permission", resource+":"+action),
 	)
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return err
 	}
@@ -408,8 +408,12 @@ func (a *ACS) RemovePermission(ctx context.Context,
 	return nil
 }
 
-func parseToken(log *slog.Logger, op, token string) (*jwt.CustomClaims, error) {
-	t, err := jwt.ParseToken(token)
+func parseToken(
+	log *slog.Logger,
+	op, token string,
+	secret func(appId int32) string,
+) (*jwt.DefaultClaims, error) {
+	t, err := jwt.ParseToken(token, secret)
 	if err != nil {
 		log.Error(
 			"token is not valid", slog.Attr{
@@ -418,10 +422,10 @@ func parseToken(log *slog.Logger, op, token string) (*jwt.CustomClaims, error) {
 			},
 		)
 
-		return &jwt.CustomClaims{}, fmt.Errorf("%s: %w", op, ErrTokenNotValid)
+		return &jwt.DefaultClaims{}, fmt.Errorf("%s: %w", op, ErrTokenNotValid)
 	}
 
-	claims, ok := t.Claims.(*jwt.CustomClaims)
+	claims, ok := t.Claims.(*jwt.DefaultClaims)
 	if !ok {
 		log.Error(
 			"token is not valid", slog.Attr{
@@ -430,7 +434,7 @@ func parseToken(log *slog.Logger, op, token string) (*jwt.CustomClaims, error) {
 			},
 		)
 
-		return &jwt.CustomClaims{}, fmt.Errorf("%s: %w", op, ErrTokenNotValid)
+		return &jwt.DefaultClaims{}, fmt.Errorf("%s: %w", op, ErrTokenNotValid)
 	}
 
 	return claims, nil

@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/puregrade-group/sso/internal/domain/models"
 	"github.com/puregrade-group/sso/internal/storage"
-	"github.com/puregrade-group/sso/internal/utils/jwt"
+	"github.com/puregrade-group/sso/pkg/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 

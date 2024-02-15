@@ -47,6 +47,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/puregrade-group/protos v0.1.7 h1:6/DXrxrNcyoJ9UIkW8bAvbgXqQ9Ih7tpr+TOGHtcVcs=
 github.com/puregrade-group/protos v0.1.7/go.mod h1:soHYeaw3pW3nSr6CyzfD4SbKgIjMHed0TjYgwlvi0b8=
+github.com/puregrade-group/protos v0.1.8/go.mod h1:soHYeaw3pW3nSr6CyzfD4SbKgIjMHed0TjYgwlvi0b8=
+github.com/puregrade-group/protos v0.1.9/go.mod h1:soHYeaw3pW3nSr6CyzfD4SbKgIjMHed0TjYgwlvi0b8=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/stretchr/testify v1.8.3 h1:RP3t2pwF7cMEbC1dqtB6poj3niw/9gnV4Cjg5oW5gtY=

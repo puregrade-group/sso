@@ -7,7 +7,7 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/golang-jwt/jwt"
 	ssov1 "github.com/puregrade-group/protos/gen/go/sso"
-	myjwt "github.com/puregrade-group/sso/internal/utils/jwt"
+	myjwt "github.com/puregrade-group/sso/pkg/jwt"
 	"github.com/puregrade-group/sso/tests/suite"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -54,13 +54,13 @@ func TestRegisterLogin_Login_HappyPath(t *testing.T) {
 	require.NotEmpty(t, token)
 
 	parsedToken, err := jwt.ParseWithClaims(
-		token, &myjwt.CustomClaims{}, func(*jwt.Token) (interface{}, error) {
+		token, &myjwt.DefaultClaims{}, func(*jwt.Token) (interface{}, error) {
 			return []byte(appSecret), nil
 		},
 	)
 	require.NoError(t, err)
 
-	claims, ok := parsedToken.Claims.(*myjwt.CustomClaims)
+	claims, ok := parsedToken.Claims.(*myjwt.DefaultClaims)
 	assert.True(t, ok)
 
 	assert.Equal(t, regResp.GetUserId(), claims.UID)

@@ -14,9 +14,10 @@ var (
 	ErrWrongMethod  = errors.New("wrong sign method")
 	ErrInvalidToken = errors.New("invalid token")
 	ErrTokenExpired = errors.New("token has expired")
+	ErrUnknownApp   = errors.New("app with this appId is unknown")
 )
 
-type CustomClaims struct {
+type DefaultClaims struct {
 	AppId int32  `json:"appId"`
 	UID   string `json:"UID"`
 	jwt.StandardClaims
@@ -30,7 +31,7 @@ func NewToken(userId [16]byte, app models.App, duration time.Duration) (string, 
 		return "", err
 	}
 
-	claims := CustomClaims{
+	claims := DefaultClaims{
 		UID:   uuidObj.String(),
 		AppId: app.Id,
 		StandardClaims: jwt.StandardClaims{
@@ -50,23 +51,26 @@ func NewToken(userId [16]byte, app models.App, duration time.Duration) (string, 
 	return tokenString, nil
 }
 
-func ParseToken(tokenString string) (*jwt.Token, error) {
+// ParseToken function checks the validity of the token and parses data from its payload.
+// The "Secret" parameter is a function that allows you to obtain the JWT secret key by application ID.
+func ParseToken(tokenString string, secret func(int32) string) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&CustomClaims{},
+		&DefaultClaims{},
 		func(token *jwt.Token) (interface{}, error) {
 			if token.Method != jwt.SigningMethodHS256 {
 				return nil, ErrWrongMethod
 			}
-			if claims, ok := token.Claims.(*CustomClaims); ok {
+			if claims, ok := token.Claims.(*DefaultClaims); ok {
 				if claims.ExpiresAt < time.Now().Unix() {
 					return nil, ErrTokenExpired
 				}
 
-				// TODO: Сделать так, чтобы инфа о секрете приложения бралась из бд и тогда токен декодировался им
-				if claims.AppId == 1 {
-					return []byte("test-secret"), nil
+				s := secret(claims.AppId)
+				if s != "" {
+					return s, nil
 				}
+				return nil, ErrUnknownApp
 			}
 			return nil, ErrWrongClaims
 		},

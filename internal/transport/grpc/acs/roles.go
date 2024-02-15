@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/puregrade-group/protos/gen/go/acs"
 	"github.com/puregrade-group/sso/internal/domain/models"
-	"github.com/puregrade-group/sso/internal/utils/jwt"
+	"github.com/puregrade-group/sso/pkg/jwt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

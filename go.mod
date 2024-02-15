@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.5.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/mattn/go-sqlite3 v1.14.19
-	github.com/puregrade-group/protos v0.1.7
+	github.com/puregrade-group/protos v0.1.9
 	github.com/stretchr/testify v1.8.3
 	golang.org/x/crypto v0.18.0
 )

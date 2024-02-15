@@ -52,7 +52,7 @@ func (a *ACS) CreateRole(ctx context.Context,
 
 	log.Info("attempting to create new role")
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -121,7 +121,7 @@ func (a *ACS) GetUserRoles(ctx context.Context,
 
 	log.Info("attempting to get user roles")
 
-	_, err = parseToken(log, op, requesterToken)
+	_, err = parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -155,7 +155,7 @@ func (a *ACS) DeleteRole(ctx context.Context,
 
 	log.Info("attempting to delete role")
 
-	claims, err := parseToken(log, op, requesterToken)
+	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -232,7 +232,7 @@ func (a *ACS) AddRole(ctx context.Context,
 
 	log.Info("attempting to add role to user")
 
-	_, err = parseToken(log, op, requesterToken)
+	_, err = parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -266,7 +266,7 @@ func (a *ACS) RemoveRole(ctx context.Context,
 
 	log.Info("attempting to add role to user")
 
-	_, err = parseToken(log, op, requesterToken)
+	_, err = parseToken(log, op, requesterToken, a.appProvider.GetSecret)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
