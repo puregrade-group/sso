@@ -86,3 +86,31 @@ func ParseToken(tokenString string, secret func(int32) string) (*jwt.Token, erro
 
 	return token, nil
 }
+
+func ParseAppToken(tokenString string, secret string) (*jwt.Token, error) {
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&DefaultClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, ErrWrongMethod
+			}
+			if claims, ok := token.Claims.(*DefaultClaims); ok {
+				if claims.ExpiresAt < time.Now().Unix() {
+					return nil, ErrTokenExpired
+				}
+			}
+			return secret, nil
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, ErrInvalidToken
+	}
+
+	return token, nil
+}
