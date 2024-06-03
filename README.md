@@ -3,17 +3,11 @@
 ### langs
 - [ru](https://github.com/puregrade-group/sso/blob/master/README_ru.md)
 
-### Description:
-A demonstration project created to showcase my skills.
-
-The project itself is an implementation of the Single Sign-On technology. It enables users to register/login in one service and use their unique token and roles/permissions across all registered applications.
-
-#### Technology Stack: Go, gRPC, SQLite, Docker
+#### Stack: Go, gRPC, SQLite, Docker
 
 ### Project Structure:
 ```
 ├───cmd
-│   └───migrator // Wrapper for migrate
 ├───config // Configurations
 ├───internal
 │   ├───app // Application components integration
@@ -23,21 +17,13 @@ The project itself is an implementation of the Single Sign-On technology. It ena
 │   │   └───models // Shared structures
 │   ├───service // Service layer
 │   │   ├───acs
-│   │   └───auth
 │   ├───storage // Data storage layer
-│   │   └───sqlite
+│   │   └───postgres
 │   ├───transport // Data transport layer
 │   │   └───grpc
 │   │       ├───acs // Files for working with roles/permissions
-│   │       └───auth // Files for user registration/login
-│   └───utils // Useful components reused in the application
-│       ├───jwt
-│       └───slogpretty
 ├───migrations // Migration files
-├───storage // Database files
 └───tests // Tests
-├───migrations
-└───suite
 ```
 
 ### Installation, Building, and Running:
