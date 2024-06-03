@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package acs;
+
+option go_package = "github.com/puregrade-group/sso;acs";
+
+message Permission {
+  optional int32 permission_id = 1;
+  string resource = 2;
+  string action = 3;
+  string description = 5;
+}
+
+service Permissions {
+  rpc Create (CreatePermissionRequest) returns (CreatePermissionResponse);
+  rpc CheckPermissions (CheckPermissionsRequest) returns (CheckPermissionsResponse);
+  rpc Delete (DeletePermissionRequest) returns (DeletePermissionResponse);
+  rpc Add (AddPermissionRequest) returns (AddPermissionResponse);
+  rpc Remove (RemovePermissionRequest) returns (RemovePermissionResponse);
+}
+
+message CreatePermissionRequest {
+  string requester_token = 1;
+  Permission permission = 2;
+}
+
+message CreatePermissionResponse {
+  int32 permission_id = 1;
+}
+
+message CheckPermissionsRequest {
+  string requester_token = 1;
+  bytes user_id = 2;
+  string resource = 3;
+  string action = 4;
+}
+
+message CheckPermissionsResponse {
+  bool ok = 1;
+}
+
+message DeletePermissionRequest {
+  string requester_token = 1;
+  int32 permission_id = 2;
+}
+
+message DeletePermissionResponse {}
+
+message AddPermissionRequest {
+  string requester_token = 1;
+  int32 role_id = 2;
+  int32 permission_id = 3;
+}
+
+message AddPermissionResponse {}
+
+message RemovePermissionRequest {
+  string requester_token = 1;
+  int32 role_id = 2;
+  int32 permission_id = 3;
+}
+
+message RemovePermissionResponse {}

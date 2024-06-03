@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS user_permissions;
-DROP TABLE IF EXISTS app_permissions;
-DROP TABLE IF EXISTS permissions;
-DROP TABLE IF EXISTS apps;
-DROP TABLE IF EXISTS users;
+DROP INDEX IF EXISTS idx_email;
+DROP TABLE IF EXISTS credentials;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS profiles;

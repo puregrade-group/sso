@@ -1,11 +1,11 @@
 package jwt
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
 	"github.com/puregrade-group/sso/internal/domain/models"
 )
 
@@ -19,20 +19,32 @@ var (
 
 type DefaultClaims struct {
 	AppId int32  `json:"appId"`
-	UID   string `json:"UID"`
+	UID   uint64 `json:"UID"`
 	jwt.StandardClaims
 }
 
-// NewToken creates new JWT token for given user and app.
-func NewToken(userId [16]byte, app models.App, duration time.Duration) (string, error) {
-	// claims
-	uuidObj, err := uuid.FromBytes(userId[:])
-	if err != nil {
-		return "", err
+// NewToken creates new JWT token for given user.
+func NewToken(userId uint64, duration time.Duration, secret []byte) (string, error) {
+	claims := DefaultClaims{
+		UID: userId,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(duration).Unix(),
+		},
 	}
 
+	// Creating new token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Signing token with a secret
+	tokenString, err := token.SignedString(secret)
+
+	return tokenString, err
+}
+
+// NewToken1 creates new JWT token for given user and app.
+func NewToken1(userId uint64, app models.App, duration time.Duration) (string, error) {
 	claims := DefaultClaims{
-		UID:   uuidObj.String(),
+		UID:   userId,
 		AppId: app.Id,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(duration).Unix(),
@@ -53,7 +65,9 @@ func NewToken(userId [16]byte, app models.App, duration time.Duration) (string, 
 
 // ParseToken function checks the validity of the token and parses data from its payload.
 // The "Secret" parameter is a function that allows you to obtain the JWT secret key by application ID.
-func ParseToken(tokenString string, secret func(int32) string) (*jwt.Token, error) {
+func ParseToken(tokenString string,
+	secret func(ctx context.Context, appId int32) (string, error),
+) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&DefaultClaims{},
@@ -66,11 +80,11 @@ func ParseToken(tokenString string, secret func(int32) string) (*jwt.Token, erro
 					return nil, ErrTokenExpired
 				}
 
-				s := secret(claims.AppId)
-				if s != "" {
-					return s, nil
+				s, err := secret(context.Background(), claims.AppId)
+				if err != nil {
+					return nil, ErrUnknownApp
 				}
-				return nil, ErrUnknownApp
+				return s, nil
 			}
 			return nil, ErrWrongClaims
 		},

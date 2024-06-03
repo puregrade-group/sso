@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"time"
 
-	"github.com/puregrade-group/protos/gen/go/sso"
-	"github.com/puregrade-group/sso/internal/service/auth"
+	"github.com/puregrade-group/sso/internal/domain/models"
+	"github.com/puregrade-group/sso/pkg/protos/gen/go/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,128 +18,178 @@ const (
 	passMaxlen = 36
 )
 
+var (
+	ErrWrongCredentials  = errors.New("invalid email or password")
+	ErrUserAlreadyExists = errors.New("user already exists")
+	ErrTokenNotFound     = errors.New("provided refresh token is not exists")
+	ErrInternal          = errors.New("internal error")
+	ErrUnknown           = errors.New("unknown error")
+)
+
 type serverApi struct {
-	ssov1.UnimplementedAuthServer
+	auth.UnimplementedAuthServer
 	auth Auth
 }
 
 // Auth interface must be implemented by the service layer
 type Auth interface {
 	Login(ctx context.Context,
-		email string,
-		password string,
-		appId int32,
-	) (token string, err error)
+		creds models.Credentials,
+	) (accessToken, refreshToken string, err error)
 	RegisterNewUser(ctx context.Context,
-		email string,
-		password string,
-		appId int32,
-	) (userId string, err error)
+		creds models.Credentials,
+		profile models.BriefProfile,
+	) (userId uint64, err error)
+	RefreshTokens(ctx context.Context,
+		token string,
+	) (accessToken, refreshToken string, err error)
 }
 
-func Register(gRPC *grpc.Server, auth Auth) {
-	ssov1.RegisterAuthServer(gRPC, &serverApi{auth: auth})
+func Register(gRPC *grpc.Server, authService Auth) {
+	auth.RegisterAuthServer(gRPC, &serverApi{auth: authService})
 }
 
 func (s *serverApi) Login(
 	ctx context.Context,
-	req *ssov1.LoginRequest,
-) (*ssov1.LoginResponse, error) {
+	req *auth.LoginRequest,
+) (*auth.LoginResponse, error) {
 	if err := validateLogin(req); err != nil {
 		return nil, err
 	}
 
-	token, err := s.auth.Login(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
-	if err != nil {
-		if errors.Is(err, auth.ErrUnknownApp) {
-			return nil, status.Error(codes.PermissionDenied, "app is unknown")
-		}
-		if errors.Is(err, auth.ErrInvalidCredentials) {
-			return nil, status.Error(codes.InvalidArgument, "invalid email or password")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+	creds := models.Credentials{
+		Email:    req.GetCreds().GetEmail(),
+		Password: req.GetCreds().GetPassword(),
 	}
 
-	return &ssov1.LoginResponse{
-		Token: token,
+	access, refresh, err := s.auth.Login(ctx, creds)
+	switch err {
+	case nil: // Do nothing
+	case ErrWrongCredentials:
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	case ErrInternal:
+		return nil, status.Error(codes.Internal, err.Error())
+	default:
+		return nil, status.Error(codes.Unknown, ErrUnknown.Error())
+	}
+
+	return &auth.LoginResponse{
+		AccessToken:  access,
+		RefreshToken: refresh,
 	}, nil
 }
 
 func (s *serverApi) Register(
 	ctx context.Context,
-	req *ssov1.RegisterRequest,
-) (*ssov1.RegisterResponse, error) {
+	req *auth.RegisterRequest,
+) (*auth.RegisterResponse, error) {
 	if err := validateRegister(req); err != nil {
 		return nil, err
 	}
 
-	userId, err := s.auth.RegisterNewUser(ctx, req.GetEmail(), req.GetPassword(), req.GetAppId())
-	if err != nil {
-		if errors.Is(err, auth.ErrUserAlreadyExists) {
-			return nil, status.Error(codes.AlreadyExists, "user already exists")
-		}
-		if errors.Is(err, auth.ErrUnknownApp) {
-			return nil, status.Error(codes.PermissionDenied, "app is unknown")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+	creds := models.Credentials{
+		Email:    req.GetCreds().GetEmail(),
+		Password: req.GetCreds().GetPassword(),
 	}
 
-	return &ssov1.RegisterResponse{
+	profile := models.BriefProfile{
+		FirstName:   req.GetProfile().GetFirstName(),
+		LastName:    req.GetProfile().GetLastName(),
+		DateOfBirth: req.GetProfile().GetDateOfBirth().AsTime(),
+	}
+
+	userId, err := s.auth.RegisterNewUser(ctx, creds, profile)
+	switch err {
+	case nil: // Do nothing
+	case ErrUserAlreadyExists:
+		return nil, status.Error(codes.AlreadyExists, err.Error())
+	default:
+		return nil, status.Error(codes.Unknown, ErrUnknown.Error())
+	}
+
+	return &auth.RegisterResponse{
 		UserId: userId,
 	}, nil
 }
 
-func validateLogin(req *ssov1.LoginRequest) error {
-	if req.GetEmail() == "" {
+func (s *serverApi) Refresh(
+	ctx context.Context,
+	req *auth.RefreshRequest,
+) (*auth.RefreshResponse, error) {
+	if err := validateRefresh(req); err != nil {
+		return nil, err
+	}
+
+	access, refresh, err := s.auth.RefreshTokens(ctx, req.GetRefreshToken())
+	switch err {
+	case nil: // Do nothing
+	case ErrTokenNotFound:
+		return nil, status.Error(codes.NotFound, err.Error())
+	default:
+		return nil, status.Error(codes.Unknown, ErrUnknown.Error())
+	}
+
+	return &auth.RefreshResponse{
+		AccessToken:  access,
+		RefreshToken: refresh,
+	}, nil
+}
+
+func validateLogin(req *auth.LoginRequest) error {
+	if req.GetCreds().GetEmail() == "" {
 		return status.Error(codes.InvalidArgument, "email is required")
 	}
 
-	if !isEmail(req.GetEmail()) {
+	if !isEmail(req.GetCreds().GetEmail()) {
 		return status.Error(codes.InvalidArgument, "email has the wrong structure")
 	}
 
-	if req.GetPassword() == "" {
+	if req.GetCreds().GetPassword() == "" {
 		return status.Error(codes.InvalidArgument, "password is required")
 	}
 
-	if len(req.GetPassword()) < passMinLen {
-		return status.Error(codes.InvalidArgument, "invalid email or password")
-	}
-
-	if len(req.GetPassword()) > passMaxlen {
-		return status.Error(codes.InvalidArgument, "invalid email or password")
-	}
-
-	if req.GetAppId() == 0 {
-		return status.Error(codes.InvalidArgument, "appId is required")
+	if len(req.GetCreds().GetPassword()) < passMinLen || len(req.GetCreds().GetPassword()) > passMaxlen {
+		return status.Error(codes.InvalidArgument, "password length is not within the allowed range")
 	}
 
 	return nil
 }
 
-func validateRegister(req *ssov1.RegisterRequest) error {
-	if req.GetEmail() == "" {
+func validateRegister(req *auth.RegisterRequest) error {
+	if req.GetCreds().GetEmail() == "" {
 		return status.Error(codes.InvalidArgument, "email is required")
 	}
 
-	if !isEmail(req.GetEmail()) {
+	if !isEmail(req.GetCreds().GetEmail()) {
 		return status.Error(codes.InvalidArgument, "email has the wrong structure")
 	}
 
-	if req.GetPassword() == "" {
+	if req.GetCreds().GetPassword() == "" {
 		return status.Error(codes.InvalidArgument, "password is required")
 	}
 
-	if len(req.GetPassword()) < passMinLen {
-		return status.Error(codes.InvalidArgument, "password is shorter than minimum password length")
+	if len(req.GetCreds().GetPassword()) < passMinLen || len(req.GetCreds().GetPassword()) > passMaxlen {
+		return status.Error(codes.InvalidArgument, "password length is not within the allowed range")
 	}
 
-	if len(req.GetPassword()) > passMaxlen {
-		return status.Error(codes.InvalidArgument, "password if longer than maximum password length")
+	if req.GetProfile().GetFirstName() == "" {
+		return status.Error(codes.InvalidArgument, "first_name is required")
 	}
 
-	if req.GetAppId() == 0 {
-		return status.Error(codes.InvalidArgument, "appId is required")
+	if req.GetProfile().GetDateOfBirth().AsTime().Add(time.Hour*24*365*6).Compare(time.Now()) == 1 { // if the DOB was less than 6 years ago
+		return status.Error(codes.InvalidArgument, "too young")
+	}
+
+	if req.GetProfile().GetDateOfBirth().AsTime().Add(time.Hour*24*365*100).Compare(time.Now()) == -1 { // // if the DOB was less than 100 years ago
+		return status.Error(codes.InvalidArgument, "too old")
+	}
+
+	return nil
+}
+
+func validateRefresh(req *auth.RefreshRequest) error {
+	if req.GetRefreshToken() == "" {
+		return status.Error(codes.InvalidArgument, "refresh token is required")
 	}
 
 	return nil

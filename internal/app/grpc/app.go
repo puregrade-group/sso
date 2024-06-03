@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strconv"
 
 	"github.com/puregrade-group/sso/internal/transport/grpc/auth"
 	"google.golang.org/grpc"
@@ -12,7 +13,7 @@ import (
 type App struct {
 	log        *slog.Logger
 	gRPCServer *grpc.Server
-	port       string
+	port       uint16
 	host       string
 }
 
@@ -20,7 +21,7 @@ type App struct {
 func New(
 	log *slog.Logger,
 	authService auth.Auth,
-	port,
+	port uint16,
 	host string,
 ) *App {
 	gRPCServer := grpc.NewServer()
@@ -47,10 +48,10 @@ func (a *App) Run() error {
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("port", a.port),
+		slog.Uint64("port", uint64(a.port)),
 	)
 
-	l, err := net.Listen("tcp", a.host+":"+a.port)
+	l, err := net.Listen("tcp", net.JoinHostPort(a.host, strconv.Itoa(int(a.port))))
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

@@ -1,14 +1,23 @@
 env: "local"
 
+access_token_ttl: "10m"
+access_token_secret: "secret"
+refresh_token_ttl: "2160h" # 90 days
+refresh_token_length: 48
+
 app:
-  name: "puregrade-auth-service"
+  name: "sso"
   version: "0.0.1"
+  node_id: 1
 
 grpc:
   host: "127.0.0.1"
   port: 50051
-  timeout: 5s
 
-storage_path: "./storage/sso.db"
-
-jwt_token_ttl: 1h
+postgres:
+  host: "localhost"
+  port: 5435
+  user: "sso"
+  password: "sso_password"
+  database: "sso_1"
+  sslmode: "disable" # or enable

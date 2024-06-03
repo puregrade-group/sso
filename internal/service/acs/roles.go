@@ -23,10 +23,6 @@ type RoleProvider interface {
 	GetUserRoles(ctx context.Context,
 		userId [16]byte,
 	) (roles []models.Role, err error)
-	CheckUserRoles(ctx context.Context,
-		userId [16]byte,
-		roles []models.Role,
-	) (ok bool, err error)
 }
 
 type RoleRemover interface {

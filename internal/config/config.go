@@ -11,24 +11,39 @@ import (
 type (
 	// Config -.
 	Config struct {
-		Env         string        `yaml:"env" env-default:"local"`
-		App         AppConfig     `yaml:"app"`
-		GRPC        GRPCConfig    `yaml:"grpc"`
-		StoragePath string        `yaml:"storage_path"`
-		JWTTokenTTL time.Duration `yaml:"jwt_secret_ttl" env-default:"1h"`
+		Env string `yaml:"env" env-default:"local"`
+
+		App      AppConfig      `yaml:"app"`
+		GRPC     GRPCConfig     `yaml:"grpc"`
+		Postgres PostgresConfig `yaml:"postgres"`
+
+		AccessTokenTTL     time.Duration `yaml:"access_token_ttl" env-default:"1h"`
+		AccessTokenSecret  string        `yaml:"access_token_secret"`
+		RefreshTokenTTL    time.Duration `yaml:"refresh_token_ttl"`
+		RefreshTokenLength uint          `yaml:"refresh_token_length"`
 	}
 
 	// AppConfig -.
 	AppConfig struct {
 		Name    string `yaml:"name"`
 		Version string `yaml:"version"`
+		NodeID  uint16 `yaml:"node_id"`
 	}
 
 	// GRPCConfig -.
 	GRPCConfig struct {
-		Port    string        `env-required:"true" yaml:"port"`
 		Host    string        `yaml:"host" env-default:""`
+		Port    uint16        `env-required:"true" yaml:"port"`
 		Timeout time.Duration `yaml:"timeout" env-default:"5s"`
+	}
+
+	PostgresConfig struct {
+		Host     string
+		Port     uint16
+		User     string
+		Password string
+		Database string
+		SSLMode  string
 	}
 )
 

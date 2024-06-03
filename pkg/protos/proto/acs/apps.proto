@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package acs;
+
+option go_package = "github.com/puregrade-group/sso;acs";
+
+message Apps {
+  optional uint64 id = 1;
+  string name = 2;
+  optional string jwtSecret = 3;
+}

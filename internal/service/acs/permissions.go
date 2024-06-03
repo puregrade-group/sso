@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/puregrade-group/sso/internal/domain/models"
-	"github.com/puregrade-group/sso/internal/storage"
 	"github.com/puregrade-group/sso/pkg/jwt"
 )
 
@@ -30,9 +29,8 @@ type PermissionsSaver interface {
 type PermissionsProvider interface {
 	CheckUserPermission(ctx context.Context,
 		userId [16]byte,
-		resource,
-		action string,
-	) (hasPerm bool, err error)
+		resource, action string,
+	) (hasPermission bool, err error)
 	GetPermissionByName(ctx context.Context,
 		resource,
 		action string,
@@ -40,8 +38,12 @@ type PermissionsProvider interface {
 }
 
 type PermissionRemover interface {
-	DeletePermission(ctx context.Context,
+	DeletePermissionById(ctx context.Context,
 		permissionId int32,
+	) (err error)
+	DeletePermissionByName(ctx context.Context,
+		resource,
+		action string,
 	) (err error)
 	DeleteRolePermission(ctx context.Context,
 		roleId int32,
@@ -51,8 +53,7 @@ type PermissionRemover interface {
 
 func (a *ACS) CreatePermission(ctx context.Context,
 	requesterToken,
-	resource,
-	action,
+	resource, action,
 	description string,
 ) (id int32, err error) {
 	const op = "ACS.CreatePermission"
@@ -131,8 +132,7 @@ func (a *ACS) CreatePermission(ctx context.Context,
 func (a *ACS) CheckUserPermission(ctx context.Context,
 	requesterToken string,
 	userId [16]byte,
-	resource,
-	action string,
+	resource, action string,
 ) (ok bool, err error) {
 	const op = "ACS.CheckUserPermission"
 
@@ -211,7 +211,7 @@ func (a *ACS) DeletePermission(ctx context.Context,
 		return ErrNotEnoughPermissions
 	}
 
-	err = a.permRemover.DeletePermission(ctx, permissionId)
+	err = a.permRemover.DeletePermissionById(ctx, permissionId)
 	if err != nil {
 		log.Error(
 			"parse token userId failed", slog.Attr{
@@ -229,14 +229,13 @@ func (a *ACS) DeletePermission(ctx context.Context,
 func (a *ACS) AddPermission(ctx context.Context,
 	requesterToken string,
 	roleId int32,
-	resource,
-	action string,
+	permissionId int32,
 ) (err error) {
 	const op = "ACS.AddPermission"
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("permission", resource+":"+action),
+		slog.Int64("permissionId", int64(permissionId)),
 	)
 
 	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
@@ -279,30 +278,7 @@ func (a *ACS) AddPermission(ctx context.Context,
 		return ErrNotEnoughPermissions
 	}
 
-	perm, err := a.permProvider.GetPermissionByName(ctx, resource, action)
-	if err != nil {
-		if errors.Is(err, storage.ErrPermissionNotFound) {
-			log.Error(
-				"permission was not found", slog.Attr{
-					Key:   "error",
-					Value: slog.StringValue(err.Error()),
-				},
-			)
-
-			return storage.ErrPermissionNotFound
-		}
-
-		log.Error(
-			"db error", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
-			},
-		)
-
-		return err
-	}
-
-	err = a.permSaver.SaveRolePermission(ctx, roleId, perm.Id)
+	err = a.permSaver.SaveRolePermission(ctx, roleId, permissionId)
 	if err != nil {
 		log.Error(
 			"db error", slog.Attr{
@@ -320,14 +296,13 @@ func (a *ACS) AddPermission(ctx context.Context,
 func (a *ACS) RemovePermission(ctx context.Context,
 	requesterToken string,
 	roleId int32,
-	resource,
-	action string,
+	permissionId int32,
 ) (err error) {
 	const op = "ACS.RemovePermission"
 
 	log := a.log.With(
 		slog.String("op", op),
-		slog.String("permission", resource+":"+action),
+		slog.Int64("permission_id", int64(permissionId)),
 	)
 
 	claims, err := parseToken(log, op, requesterToken, a.appProvider.GetSecret)
@@ -370,30 +345,7 @@ func (a *ACS) RemovePermission(ctx context.Context,
 		return ErrNotEnoughPermissions
 	}
 
-	perm, err := a.permProvider.GetPermissionByName(ctx, resource, action)
-	if err != nil {
-		if errors.Is(err, storage.ErrPermissionNotFound) {
-			log.Error(
-				"permission was not found", slog.Attr{
-					Key:   "error",
-					Value: slog.StringValue(err.Error()),
-				},
-			)
-
-			return storage.ErrPermissionNotFound
-		}
-
-		log.Error(
-			"db error", slog.Attr{
-				Key:   "error",
-				Value: slog.StringValue(err.Error()),
-			},
-		)
-
-		return err
-	}
-
-	err = a.permRemover.DeleteRolePermission(ctx, roleId, perm.Id)
+	err = a.permRemover.DeleteRolePermission(ctx, roleId, permissionId)
 	if err != nil {
 		log.Error(
 			"db error", slog.Attr{
@@ -411,7 +363,7 @@ func (a *ACS) RemovePermission(ctx context.Context,
 func parseToken(
 	log *slog.Logger,
 	op, token string,
-	secret func(appId int32) string,
+	secret func(ctx context.Context, appId int32) (string, error),
 ) (*jwt.DefaultClaims, error) {
 	t, err := jwt.ParseToken(token, secret)
 	if err != nil {

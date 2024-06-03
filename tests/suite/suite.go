@@ -3,28 +3,26 @@ package suite
 import (
 	"context"
 	"net"
+	"strconv"
 	"testing"
 
-	"github.com/puregrade-group/protos/gen/go/acs"
-	ssov1 "github.com/puregrade-group/protos/gen/go/sso"
 	"github.com/puregrade-group/sso/internal/config"
+	"github.com/puregrade-group/sso/pkg/protos/gen/go/auth"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
 type Suite struct {
 	*testing.T
-	Cfg         *config.Config
-	AuthClient  ssov1.AuthClient
-	RolesClient acs.RolesClient
-	PermsClient acs.PermissionsClient
+	Cfg        *config.Config
+	AuthClient auth.AuthClient
 }
 
 func New(t *testing.T) (context.Context, *Suite) {
 	t.Helper()
 	t.Parallel()
 
-	cfg := config.MustLoadPath("../config/local_tests.yaml")
+	cfg := config.MustLoadPath("../config/config.yaml")
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.GRPC.Timeout)
 
@@ -45,14 +43,12 @@ func New(t *testing.T) (context.Context, *Suite) {
 	}
 
 	return ctx, &Suite{
-		T:           t,
-		Cfg:         cfg,
-		AuthClient:  ssov1.NewAuthClient(cc),
-		RolesClient: acs.NewRolesClient(cc),
-		PermsClient: acs.NewPermissionsClient(cc),
+		T:          t,
+		Cfg:        cfg,
+		AuthClient: auth.NewAuthClient(cc),
 	}
 }
 
 func grpcAddress(cfg *config.Config) string {
-	return net.JoinHostPort(cfg.GRPC.Host, cfg.GRPC.Port)
+	return net.JoinHostPort(cfg.GRPC.Host, strconv.Itoa(int(cfg.GRPC.Port)))
 }

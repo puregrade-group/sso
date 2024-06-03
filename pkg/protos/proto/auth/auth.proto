@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package auth;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/puregrade-group/auth";
+
+message Credentials {
+  optional uint64 id = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message BriefProfile {
+  string first_name = 1;
+  string last_name = 2;
+  google.protobuf.Timestamp date_of_birth = 3;
+}
+
+service Auth {
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Refresh (RefreshRequest) returns (RefreshResponse);
+}
+
+message RegisterRequest {
+  Credentials creds = 1;
+  BriefProfile profile = 2;
+}
+
+message RegisterResponse {
+  uint64 user_id = 1;
+}
+
+message LoginRequest {
+  Credentials creds = 1;
+}
+
+message LoginResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message RefreshResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+}

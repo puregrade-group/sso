@@ -1,0 +1,24 @@
+version: "3"
+services:
+  server:
+    build: .
+    ports:
+      - "50051:50051"
+
+
+  postgres:
+    image: "postgres:16.2-alpine3.19"
+    container_name: postgres
+    volumes:
+      - "./data/postgres:/var/lib/postgresql/data"
+      - "./migrations/0001_init.up.sql:/docker-entrypoint-initdb.d/0001_init.up.sql"
+    environment:
+      POSTGRES_PASSWORD: "sso_password"
+      POSTGRES_USER: "sso"
+      POSTGRES_DB: "sso_1"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U sso -d sso_1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

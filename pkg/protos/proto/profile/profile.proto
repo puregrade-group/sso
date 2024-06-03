@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package profile;
+
+option go_package = "github.com/puregrade-group/sso;profile";
+
+enum IdP {
+  Internal = 0;
+  Steam = 1;
+  Google = 2;
+  Discord = 3;
+  reserved 4 to 63;
+}
+
+message Profile {
+  bytes profile_id = 1;
+  string username = 2;
+  string avatar_hash = 3;
+  IdP identity_provider = 4;
+}
+
+service Profiles {
+  rpc Create (CreateProfileRequest) returns (CreateProfileResponse);
+  rpc Update (UpdateProfileRequest) returns (UpdateProfileResponse);
+  rpc Get (GetProfileRequest) returns (GetProfileResponse);
+  rpc Delete (DeleteProfileRequest) returns (DeleteProfileResponse);
+}
+
+message CreateProfileRequest {
+  Profile profile = 1;
+}
+
+message CreateProfileResponse {
+  bytes profile_id = 1;
+}
+
+message UpdateProfileRequest {
+  Profile profile = 1;
+}
+
+message UpdateProfileResponse {}
+
+message GetProfileRequest {
+  bytes profile_id = 1;
+}
+
+message GetProfileResponse {
+  Profile profile = 1;
+}
+
+message DeleteProfileRequest {
+  bytes profile_id = 1;
+}
+
+message DeleteProfileResponse {}
+
+

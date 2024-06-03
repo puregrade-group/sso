@@ -3,8 +3,13 @@
 .dockerignore
 Dockerfile
 Makefile
-docs
 README.md
+README_ru.md
+docker-compose.yaml
 tests
 config/config.yaml
 config/local_tests.yaml
+example
+data
+migrations
+pkg/protos/proto

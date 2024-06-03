@@ -26,10 +26,12 @@ func main() {
 
 	application := app.New(
 		log,
-		cfg.GRPC.Port,
-		cfg.GRPC.Host,
-		cfg.StoragePath,
-		cfg.JWTTokenTTL,
+		cfg.Postgres.Host, cfg.Postgres.Port, cfg.Postgres.Database,
+		cfg.Postgres.User, cfg.Postgres.Password, cfg.Postgres.SSLMode,
+		cfg.GRPC.Host, cfg.GRPC.Port,
+		cfg.App.NodeID,
+		cfg.AccessTokenTTL, []byte(cfg.AccessTokenSecret),
+		cfg.RefreshTokenTTL, cfg.RefreshTokenLength,
 	)
 
 	go application.GRPCServer.MustRun()

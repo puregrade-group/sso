@@ -1,6 +1,7 @@
 package acs
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/puregrade-group/sso/internal/domain/models"
@@ -18,8 +19,8 @@ type ACS struct {
 }
 
 type AppProvider interface {
-	GetSecret(appId int32) (secret string)
-	GetApp(appId int32) (app models.App)
+	GetSecret(ctx context.Context, appId int32) (string, error)
+	GetApp(ctx context.Context, appId int32) (models.App, error)
 }
 
 func New(
